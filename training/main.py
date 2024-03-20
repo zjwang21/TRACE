@@ -284,15 +284,17 @@ def main():
                 param.requires_grad = True
 
     if args.CL_method == "lora":
-        from peft import get_peft_model, LoraConfig, TaskType
-        
-        peft_config = LoraConfig(
-            task_type=TaskType.CAUSAL_LM, r=8, lora_alpha=32, lora_dropout=0.1
+        from peft import get_peft_model, LoraConfig, TaskType, MoeConfig
+        distance = 1
+        layers = list(range(distance - 1, len(model.model.layers), distance))
+        moe_config = MoeConfig(
+            task_type=TaskType.CAUSAL_LM,
+            inference_mode=False,
+            router_type="top1",
+            num_experts=2,
+            layers_to_transform=layers
         )
-        model = get_peft_model(model, peft_config)
-        for name, param in model.named_parameters():
-            if name.find("lora") != -1:
-                param.requires_grad = True
+        model = get_peft_model(model, moe_config)
     
     train_task_list = {}
     eval_task_list = {}
